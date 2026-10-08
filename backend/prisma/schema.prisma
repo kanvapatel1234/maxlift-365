@@ -1,0 +1,62 @@
+// Prisma schema for MaxLift365 gym workout and PR tracker
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             Int             @id @default(autoincrement())
+  name           String
+  email          String          @unique
+  passwordHash   String          @map("password_hash")
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+  workoutRecords WorkoutRecord[]
+
+  @@map("users")
+}
+
+model MuscleGroup {
+  id        Int        @id @default(autoincrement())
+  name      String     @unique
+  exercises Exercise[]
+
+  @@map("muscle_groups")
+}
+
+model Exercise {
+  id             Int             @id @default(autoincrement())
+  name           String
+  muscleGroupId  Int             @map("muscle_group_id")
+  description    String?
+  createdAt      DateTime        @default(now()) @map("created_at")
+  muscleGroup    MuscleGroup     @relation(fields: [muscleGroupId], references: [id], onDelete: Cascade)
+  workoutRecords WorkoutRecord[]
+
+  @@unique([name, muscleGroupId])
+  @@index([muscleGroupId])
+  @@map("exercises")
+}
+
+model WorkoutRecord {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @map("user_id")
+  exerciseId  Int      @map("exercise_id")
+  weight      Float
+  reps        Int
+  performedAt DateTime @map("performed_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  exercise    Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([exerciseId])
+  @@index([userId, exerciseId])
+  @@index([performedAt])
+  @@map("workout_records")
+}
